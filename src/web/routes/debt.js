@@ -16,8 +16,32 @@ router.post('/info', function(req, res, next) { //查询账款信息
     var contractAddress = req.body.contractAddress;
     var enterpriseAddress = req.body.enterpriseAddress;
     var _enterprise = new enterprise();
-    var _data = _enterprise.info(req.session, contractAddress, enterpriseAddress);
-    res.json({data: _data});
+    var _data = _enterprise.getDebts(req.session, contractAddress, enterpriseAddress);
+    var parse_data = [];
+    var i = 0, j = 0;
+    while (i < _data.length) {
+        let tmp = {};
+        let t = "";
+        for (j = 0; j < 20; ++j){
+            t += _data[i++].substring(2);
+        }
+        tmp.address = "0x" + t;
+        t = "";
+        for (j = 0; j < 8; ++j)
+            t += _data[i++].substring(2);
+        tmp.amount = "0x" + t;
+        t = "";
+        for (j = 0; j < 8; ++j)
+            t += _data[i++].substring(2);
+        tmp.expireTime = "0x" + t;
+        t = "";
+        tmp.debtType = _data[i++].substring(2);
+        tmp.isTransfered = _data[i++].substring(2);
+        tmp.status = _data[i++].substring(2);
+        parse_data.push(tmp);
+    }
+    res.json({"code":"0",msg:"ok","count":parse_data.length,"data":parse_data})
+    // res.json({"code":"0",msg:"ok","count":100,"data":[{"id":1, "address":"0xffee", "amount":120, "expireTime": 1600000, "debtType": 1, "isTransfered":false,"status":"true"}]})
 });
 
 router.get('/add', function(req, res, next) {
@@ -29,62 +53,90 @@ router.post('/add', function(req, res, next) {// 添加账款信息
     var enterpriseAddress = req.body.enterpriseAddress;
     var debtType = req.body.debtType;
     var value = req.body.value;
-    var expireTime = req.body.value;
-    var _enterprise = new enterprise();
-    var _status = _enterprise.add(req.session, contractAddress, enterpriseAddress, debtType, value, expireTime);
-    res.json({status: _status});
-});
-
-router.post('/del', function(req, res, next) {
-    var contractAddress = req.body.contractAddress;
-    var enterpriseAddress = req.body.enterpriseAddress;
-    var debtType = req.body.debtType;
-    var value = req.body.value;
     var expireTime = req.body.expireTime;
     var _enterprise = new enterprise();
-    var _status = _enterprise.del(req.session, contractAddress, enterpriseAddress, debtType, value, expireTime);
+    var _status = _enterprise.addDebt(req.session, contractAddress, enterpriseAddress, debtType=="1"?"1":"", value, expireTime);
     res.json({status: _status});
 });
-
 
 router.get('/trans', function(req, res, next) {
-    res.render('debt-trans');
+    var _address = req.query.as;
+    var _amount = req.query.at;
+    var _expireTime = req.query.et;
+    console.log(parseInt(_amount));
+    console.log(parseInt(_expireTime));
+    res.render('debt-trans', {address:_address, amount:_amount, expireTime: _expireTime});
 })
 
-router.post('/trans', function(req, res, next) {
+router.post('/trans', function(req, res, next) { //请求进口商进行账款转移
     var contractAddress = req.body.contractAddress;
     var factoryAddress = req.body.factoryAddress;
+    var merchant = req.body.merchant;
     var value = req.body.value;
     var expireTime = req.body.expireTime;
+    var _factory = new factory();
+    console.log("额度::" + _factory.requestFinancing(req.session, factoryAddress, merchant, value, expireTime));
     var _enterprise = new enterprise();
-    var _status = _enterprise.trans(req.session, contractAddress, factoryAddress, value, expireTime);
+    var _status = _enterprise.addTransferRequest(req.session, contractAddress, factoryAddress, value, expireTime);
     res.json({status:_status});
 });
 
-router.post('/getList', function(req, res, next) {
-    var contractAddress = req.body.contractAddress;
-    res.json({res:(new enterprise()).getTrans(contractAddress)});
+router.get('/queue', function(req, res, next) {
+    res.render('trans-queue');
 });
 
-router.get('/queue', function(req, res, next) {
-    return 'trans-queue';
-})
+router.post('/queue', function(req, res, next) {　//查看账款转移请求
+    var contractAddress = req.body.contractAddress;
+    var _enterprise = new enterprise();
+    var _data = _enterprise.getTransferRecords(req.session, contractAddress);
+    var parse_data = [];
+    var i = 0, j = 0;
+    while (i < _data.length) {
+        let tmp = {};
+        let t = "";
+        for (j = 0; j < 20; ++j){
+            t += _data[i++].substring(2);
+        }
+        tmp.factory = "0x" + t;
+        t = "";
+        for (j = 0; j < 20; ++j)
+            t += _data[i++].substring(2);
+        tmp.exporter = "0x" + t;
+        t = "";
+        for (j = 0; j < 8; ++j)
+            t += _data[i++].substring(2);
+        tmp.amount = "0x" + t;
+        t = "";
+        for (j = 0; j < 8; ++j)
+            t += _data[i++].substring(2);
+        tmp.expireTime = "0x" + t;
+        t = "";
+        tmp.status = _data[i++].substring(2);
+        parse_data.push(tmp);
+    }
+    console.log(_data);
+    res.json({"code":"0",msg:"ok","count":parse_data.length,"data":parse_data})
+});
 
-router.post('/doTrans', function(req, res, next) {
+router.get('/commitTrans', function(req, res, next) {
+    var _factory = req.query.ft;
+    var _exporter = req.query.er;
+    var _amount = req.query.at;
+    var _expireTime = req.query.et;
+    res.render('trans-commit', {factory:_factory, exporter:_exporter, amount:_amount, expireTime:_expireTime});
+});
+
+router.post('/commitTrans', function(req, res, next) {　// 进口商进行账款转移
     var contractAddress = req.body.contractAddress;
     var factoryAddress = req.body.factoryAddress;
-    var enterpriseAddress = req.body.enterpriseAddress;
+    var exporter = req.body.exporter;
     var value = req.body.value;
     var expireTime = req.body.expireTime;
     var _enterprise = new enterprise();
     var _factory = new factory();
-    var _status = _enterprise.doTrans(req.session, contractAddress, factoryAddress, enterpriseAddress, value, expireTime);
-    var __status = false;
-    if (_status) {
-        __status = _factory.commitFinancing(req.session, factoryAddress, enterpriseAddress, value, expireTime);
-    }
-
-    res.json({status: __status});
+    _enterprise.commitTransferDebt(req.session, contractAddress, factoryAddress, exporter, value, expireTime);
+    _factory.commitTransferDebt(req.session, factoryAddress, exporter, value, expireTime);
+    res.json({status: true});
 });
 
 module.exports = router;

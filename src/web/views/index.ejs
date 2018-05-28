@@ -25,7 +25,6 @@
         </div>
         <ul class="layui-nav left fast-add" lay-filter="">
           <li class="layui-nav-item">
-            <!-- <a href="javascript:;">+新增</a> -->
             <dl class="layui-nav-child"> <!-- 二级菜单 -->
               <dd><a onclick="x_admin_show('资讯','http://www.baidu.com')"><i class="iconfont">&#xe6a2;</i>资讯</a></dd>
               <dd><a onclick="x_admin_show('图片','http://www.baidu.com')"><i class="iconfont">&#xe6a8;</i>图片</a></dd>
@@ -38,15 +37,12 @@
             <%if (account) {%>
                 <a href="javascript:;" id="username"><%=account%></a>
                 <dl class="layui-nav-child"> <!-- 二级菜单 -->
-                    <!-- <dd><a onclick="x_admin_show('个人信息','http://www.baidu.com')">个人信息</a></dd> -->
-                    <!-- <dd><a onclick="x_admin_show('切换帐号','http://www.baidu.com')">切换帐号</a></dd> -->
                     <dd><a href="/user/logout">退出</a></dd>
                   </dl>
             <%}else{%>
                 <a href="javascript:;" id="login">登录</a>
             <%}%>
           </li>
-          <!-- <li class="layui-nav-item to-index"><a href="/">前台首页</a></li> -->
         </ul>
         
     </div>
@@ -113,21 +109,9 @@
                         </a>
                     </li >
                     <li>
-                        <a _href="/debt/info">
+                        <a _href="/debt/queue">
                             <i class="iconfont">&#xe6a7;</i>
-                            <cite>删除账款信息</cite>
-                        </a>
-                    </li >
-                    <li>
-                        <a _href="/debt/trans">
-                            <i class="iconfont">&#xe6a7;</i>
-                            <cite>转让账款信息</cite>
-                        </a>
-                    </li >
-                    <li>
-                        <a _href="admin-rule.html">
-                            <i class="iconfont">&#xe6a7;</i>
-                            <cite>待转让</cite>
+                            <cite>转让申请</cite>
                         </a>
                     </li >
                 </ul>
@@ -140,19 +124,7 @@
                 </a>
                 <ul class="sub-menu">
                     <li>
-                        <a _href="echarts1.html">
-                            <i class="iconfont">&#xe6a7;</i>
-                            <cite>申请融资</cite>
-                        </a>
-                    </li >
-                    <li>
-                        <a _href="echarts2.html">
-                            <i class="iconfont">&#xe6a7;</i>
-                            <cite>取消申请</cite>
-                        </a>
-                    </li>
-                    <li>
-                        <a _href="echarts3.html">
+                        <a _href="/financing/queue">
                             <i class="iconfont">&#xe6a7;</i>
                             <cite>融资查询</cite>
                         </a>
@@ -162,7 +134,6 @@
         </ul>
       </div>
     </div>
-    <!-- <div class="x-slide_left"></div> -->
     <!-- 左侧菜单结束 -->
     <!-- 右侧主体开始 -->
     <div class="page-content">
@@ -189,18 +160,19 @@
         $(function(){
             layui.use('layer',function(){
                 var layer = layui.layer;
-                $("#login").on('click', function(){
+                $("#login").on('click', function(){//登录弹窗
                     layer.open({
                         area: [($(window).width()*0.5)+'px', ($(window).height()*0.7) +'px'],
-                        fix: false, //不固定
+                        fix: false,
                         shadeClose: true,
                         shade:0.4,
                         skin: 'login-bg',
                         title: '登录',
-                        content: '<div class="login"><div class="message">登录</div><div id="darkbannerwrap"></div><form id="login-form" method="post" class="layui-form" action="/user/login"><input name="account" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" ><hr class="hr15"><input name="password" placeholder="密码"  type="password" class="layui-input"><hr class="hr15"></form></div>',
+                        content: '<div class="login"><div class="message">登录</div><div id="darkbannerwrap"></div><form id="login-form" method="post" class="layui-form" action="/user/login"><input name="account" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" value="0xc5d3ed484a89a544c0d30b252efc4fd957a790b0" ><hr class="hr15"><input name="password" placeholder="密码"  type="password" class="layui-input"><hr class="hr15"></form></div>',
                         yes: function(index){
                             $.post('/user/login', $('#login-form').serialize(), function(res){
                                 console.log(res);
+                                window.location.reload();
                             });
                             layer.close(index);
                         }

@@ -26,10 +26,10 @@ contract Enterprise {
         bool status; //1字节
     }
 
-    mapping (address=>Debt[]) private debt_records; //记录债务，囊括欠债和应收账款
+    mapping (address=>Debt) private debts; //记录债务，囊括欠债和应收账款
     mapping (address=>Financing[]) private financing_records; //融资记录
 
-    mapping (address=>address) private contract_address; //机构对应的合约地址
+    // mapping (address=>address) private contract_address; //机构对应的合约地址
     
     Transfer[] private transfer_records;
     
@@ -37,8 +37,8 @@ contract Enterprise {
         require(msg.sender == owner);
         _;
     }
-
-    constructor() payable public {
+    
+    function  Enterprise() public {
         owner = msg.sender;
     }
 
@@ -60,81 +60,77 @@ contract Enterprise {
         }
     }
 
-    function addTransferRequest(address _factor, uint256 _amount, uint256 _time) public returns(bool) {
+    function addTransferRequest(address _factor, uint256 _amount, uint256 _time) public {
         transfer_records.push(Transfer(_factor, msg.sender, _amount, _time, true));
-        return true;
     }
 
     function setTransferStatus(address _factor, address _exporter, uint256 _amount, uint256 _time) 
-    check_permission public returns (bool status) { //merchant使用
-        status = false;
+    check_permission public { //merchant使用
         for (uint i = 0; i < transfer_records.length; i++){
             if (transfer_records[i].factor == _factor && 
             transfer_records[i].exporter == _exporter && transfer_records[i].amount == _amount && transfer_records[i].time == _time)
             transfer_records[i].status = false;
-            status = true;
         }
     }
 
     function setDebtStatus(address _owner, uint256 _amount, uint256 _time, bool _status) 
-    check_permission public returns (bool status){ //exporter使用
-        status = false;
-        for (uint i = 0; i < debt_records[_owner].length; ++i) {
-            if (debt_records[_owner][i].amount == _amount && 
-            debt_records[_owner][i].time == _time && debt_records[_owner][i].debt_type == false){
-                debt_records[_owner][i].status = _status;
-                status = true;
-            }
-        }
+    check_permission public{ //exporter使用
+        // status = false;
+        // for (uint i = 0; i < debts[_owner].length; ++i) {
+        //     if (debts[_owner][i].amount == _amount && 
+        //     debts[_owner][i].time == _time && debts[_owner][i].debt_type == false){
+        //         debts[_owner][i].status = _status;
+        //         status = true;
+        //     }
+        // }
+        debts[_owner].status = false;
     }
 
+    // function commitTransferDebt(address _factor, address _exporter, uint256 _amount, uint256 _time) 
+    // check_permission public{//merchant使用，确认转账
+    //     // Debt[] storage debts = debts[_exporter];
+    //     // for (uint i = 0; i < debts.length; i++){
+    //     //     if (debts[i].amount == _amount && debts[i].time == _time){
+    //     //         debts[i].status = false;
+    //     //         debts[_factor].push(Debt(_exporter, debts[i].amount, debts[i].time, false, true, true));
+    //     //         // delete_debt(debts, i);
+    //     //         // status = true;
+    //     //         break;
+    //     //     }
+    //     // }
+    //     Debt storage debt = debts[_exporter];
+    //     if (debt.amount == _amount && debt.time == _time){
+    //         debt.status = false;
+    //         debts[_factor] = Debt(_exporter, _amount, _time, false, true, true);
+    //         }
+    // }
+
     function commitTransferDebt(address _factor, address _exporter, uint256 _amount, uint256 _time) 
-    check_permission public returns (bool status){//merchant使用，确认转账
-        status = false;
-        Debt[] storage debts = debt_records[_exporter];
-        for (uint i = 0; i < debts.length; i++){
-            if (debts[i].amount == _amount && debts[i].time == _time){
-                debt_records[_factor].push(Debt(_exporter, debts[i].amount, debts[i].time, false, true, debts[i].status));
-                delete_debt(debts, i);
-                status = true;
-                break;
-            }
-        }
+    check_permission public{//merchant使用，确认转账
+        Debt storage debt = debts[_exporter];
+        debt.status = false;
+        debts[_factor] = Debt(_exporter, _amount, _time, false, true, true);
     }
 
     function addFinancing(address _factor, uint256 _amount, uint256 cash, bool is_done) check_permission public {//添加融资记录
         financing_records[_factor].push(Financing(_amount, cash, is_done));
     }
 
-    function getContractAddress() view public returns(address) {
-        return contract_address[msg.sender];
-    }
-
-    function setContractAddress(address _contract) public {
-        contract_address[msg.sender] = _contract;
-    }
-
-    function setContractAddress(address _merchant, address _contract) check_permission public {
-        contract_address[_merchant] = _contract;
-    }
-
     //TODO 返回记录详情
     function getDebts(address someone) view check_permission public returns(byte[] data){
-        Debt[] storage debts = debt_records[someone];
-        data = new byte[](debts.length * 39);
+        Debt storage debt = debts[someone];
+        data = new byte[](39);
         uint idx = 0;
         uint j;
-        for (uint i = 0; i < debts.length; ++i){
-            for (j = 0; j < 20; ++j)
-                data[idx++] = bytes20(debts[i].owner)[j];
-            for (j = 0; j < 8; ++j)
-                data[idx++] = bytes8(debts[i].amount)[j];
-            for (j = 0; j < 8; ++j)
-                data[idx++] = bytes8(debts[i].time)[j];
-            data[idx++] = debts[i].debt_type ? byte(1) : byte(0);
-            data[idx++] = debts[i].is_transferred ? byte(1) : byte(0);
-            data[idx++] = debts[i].status ? byte(1) : byte(0);
-        }
+        for (j = 0; j < 20; ++j)
+            data[idx++] = bytes20(debt.owner)[j];
+        for (j = 0; j < 8; ++j)
+            data[idx++] = bytes8(debt.amount)[j];
+        for (j = 0; j < 8; ++j)
+            data[idx++] = bytes8(debt.time)[j];
+        data[idx++] = debt.debt_type ? byte(1) : byte(0);
+        data[idx++] = debt.is_transferred ? byte(1) : byte(0);
+        data[idx++] = debt.status ? byte(1) : byte(0);
     }
 
     function getFinancing(address someone) view check_permission public returns(byte[] data) {
@@ -153,16 +149,6 @@ contract Enterprise {
 
     function addDebt(address _someone, bool _debt_type, uint256 _amount, uint256 _time) 
     check_permission public returns(bool status) {
-        uint _length = debt_records[_someone].length;
-        debt_records[_someone].push(Debt(_someone, _amount, _time, _debt_type, false, true));
-        status = debt_records[_someone].length - _length == 1 ? true : false;
+        debts[_someone] = Debt(_someone, _amount, _time, _debt_type, false, true);
     }
-
-    function delete_debt(Debt[] storage debts, uint idx) private {
-        for (uint i = idx; i < debts.length - 1; ++i)
-            debts[i] = debts[i + 1];
-        delete debts[debts.length - 1];
-        debts.length--;
-    }
-
 }

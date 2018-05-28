@@ -12,11 +12,12 @@ router.get('/query', function(req, res, next) {
 });
 
 router.post('/query', function(req, res, next) { //查询信用额度
-    var factoryAddress = req.body.factoryAddress;
-    var merchantAddress = req.body.merchantAddress;
+    var contractAddress = req.body.contractAddress;
+    var merchant = req.body.merchant;
     var _factory = new factory();
-    var _credit = _factory.queryCredit(req.session, factoryAddress, merchantAddress);
-    res.json({address:merchantAddress, credit:_credit});
+    console.log(req.body);
+    var _credit = _factory.getCredit(req.session, contractAddress, merchant);
+    res.json({address:merchant, credit:_credit});
 });
 
 router.get('/modify', function (req, res, next) {
@@ -25,12 +26,12 @@ router.get('/modify', function (req, res, next) {
 
 router.post('/modify', function(req, res, next) { //调整信用额度
     var _factory = new factory();
-    var factoryAddress = req.body.factoryAddress;
-    var merchantAddress = req.body.merchantAddress;
+    var contractAddress = req.body.contractAddress;
+    var merchant = req.body.merchant;
     var value = req.body.value;
     var _factory = new factory();
-    var retVal = _factory.modifyCredit(req.session, factoryAddress, merchantAddress, value);
-    res.json({address: merchantAddress, credit: retVal});
+    var _status = _factory.setCredit(req.session, contractAddress, merchant, value);
+    res.json({address: merchant, credit: value, status: true});
 });
 
 module.exports = router;

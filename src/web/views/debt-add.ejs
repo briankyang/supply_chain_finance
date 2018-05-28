@@ -23,82 +23,56 @@
   <body>
     <div class="x-body">
         <form class="layui-form">
-          <div class="layui-form-item">
-              <label for="username" class="layui-form-label">
+            <div class="layui-form-item">
+                <label for="contractAddress" class="layui-form-label">
+                    <span class="x-red">*</span>合约地址
+                </label>
+                <div class="layui-input-inline">
+                    <input type="text" id="contractAddress" name="contractAddress" required="" lay-verify="required"
+                    autocomplete="off" class="layui-input" value="0xc0AaEe49d517236346576C8Ec46052F3E58a5215">
+                </div>
+            </div>
+            <div class="layui-form-item">
+              <label for="enterpriseAddress" class="layui-form-label">
                   <span class="x-red">*</span>企业地址
               </label>
               <div class="layui-input-inline">
-                  <input type="text" id="username" name="username" required="" lay-verify="required"
-                  autocomplete="off" class="layui-input">
+                  <input type="text" id="enterpriseAddress" name="enterpriseAddress" required="" lay-verify="required"
+                  autocomplete="off" class="layui-input" value="0x6a14d81cfb1038a5700542f4d7c6a05ae8e51162">
               </div>
-              <!-- <div class="layui-form-mid layui-word-aux">
-                  <span class="x-red">*</span>将会成为您唯一的登入名
-              </div> -->
           </div>
           <div class="layui-form-item">
               <label for="phone" class="layui-form-label">
                   <span class="x-red">*</span>账款类型
               </label>
               <div class="layui-input-inline">
-                  <!-- <input type="text" id="phone" name="phone" required="" lay-verify="phone"
-                  autocomplete="off" class="layui-input"> -->
                   <div class="layui-input-inline">
-                    <select name="action">
-                      <option>请方法</option>
-                      <option selected>应收账款</option>
-                      <option>login</option>
-                      <option>checklogin</option>
+                    <select name="debtType">
+                      <option selected value="0">应收账款</option>
+                      <option value="1">负债</option>
                     </select>
                   </div>
               </div>
-              <!-- <div class="layui-form-mid layui-word-aux">
-                  <span class="x-red">*</span>将会成为您唯一的登入名
-              </div> -->
           </div>
           <div class="layui-form-item">
-              <label for="L_email" class="layui-form-label">
+              <label for="value" class="layui-form-label">
                   <span class="x-red">*</span>账款额
               </label>
               <div class="layui-input-inline">
-                  <input type="text" id="L_email" name="email" required="" lay-verify="email"
-                  autocomplete="off" class="layui-input">
+                  <input type="text" id="value" name="value" required=""
+                  autocomplete="off" class="layui-input" value="0xffff">
               </div>
-              <!-- <div class="layui-form-mid layui-word-aux">
-                  <span class="x-red">*</span>
-              </div> -->
           </div>
-          <!-- <div class="layui-form-item">
-              <label class="layui-form-label"><span class="x-red">*</span>角色</label>
-              <div class="layui-input-block">
-                <input type="checkbox" name="like1[write]" lay-skin="primary" title="超级管理员" checked="">
-                <input type="checkbox" name="like1[read]" lay-skin="primary" title="编辑人员">
-                <input type="checkbox" name="like1[write]" lay-skin="primary" title="宣传人员" checked="">
-              </div>
-          </div> -->
           <div class="layui-form-item">
-              <label for="L_pass" class="layui-form-label">
+              <label for="expireTime" class="layui-form-label">
                   <span class="x-red">*</span>收账期
               </label>
               <div class="layui-input-inline">
-                  <input type="password" id="L_pass" name="pass" required="" lay-verify="pass"
-                  autocomplete="off" class="layui-input">
+                  <input type="text" id="expireTime" name="expireTime" required=""
+                  autocomplete="off" class="layui-input" value="1023">
               </div>
-              <!-- <div class="layui-form-mid layui-word-aux">
-                  6到16个字符
-              </div> -->
           </div>
-          <!-- <div class="layui-form-item">
-              <label for="L_repass" class="layui-form-label">
-                  <span class="x-red">*</span>确认密码
-              </label>
-              <div class="layui-input-inline">
-                  <input type="password" id="L_repass" name="repass" required="" lay-verify="repass"
-                  autocomplete="off" class="layui-input">
-              </div>
-          </div> -->
           <div class="layui-form-item">
-              <label for="L_repass" class="layui-form-label">
-              </label>
               <button  class="layui-btn" lay-filter="add" lay-submit="">
                   增加
               </button>
@@ -110,31 +84,14 @@
             $ = layui.jquery;
           var form = layui.form
           ,layer = layui.layer;
-        
-          //自定义验证规则
-          form.verify({
-            nikename: function(value){
-              if(value.length < 5){
-                return '昵称至少得5个字符啊';
-              }
-            }
-            ,pass: [/(.+){6,12}$/, '密码必须6到12位']
-            ,repass: function(value){
-                if($('#L_pass').val()!=$('#L_repass').val()){
-                    return '两次密码不一致';
-                }
-            }
-          });
-
           //监听提交
           form.on('submit(add)', function(data){
-            console.log(data);
-            //发异步，把数据提交给php
-            layer.alert("增加成功", {icon: 6},function () {
-                // 获得frame索引
-                var index = parent.layer.getFrameIndex(window.name);
-                //关闭当前frame
-                parent.layer.close(index);
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+            $.post('/debt/add', data.field, function(res) {
+              layer.msg(res, {icon:6}, function(index){
+                  layer.close(index);
+              });
             });
             return false;
           });
@@ -142,12 +99,6 @@
           
         });
     </script>
-    <script>var _hmt = _hmt || []; (function() {
-        var hm = document.createElement("script");
-        hm.src = "https://hm.baidu.com/hm.js?b393d153aeb26b46e9431fabaf0f6190";
-        var s = document.getElementsByTagName("script")[0];
-        s.parentNode.insertBefore(hm, s);
-      })();</script>
   </body>
 
 </html>
